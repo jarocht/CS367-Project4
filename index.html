@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<script src='vendor/three.js/build/three.js'></script>
+<script src="vendor/require.js/require.js"></script>
+<script src="vendor/three.js/examples/js/Detector.js"></script>
+<script src="vendor/threex.windowresize.js"></script>
+<body style='margin: 0px; background-color: #bbbbbb; overflow: hidden;'><script>
+require([], function(){
+	// detect WebGL
+	if( !Detector.webgl ){
+		Detector.addGetWebGLMessage();
+		throw 'WebGL Not Available'
+	}
+	// setup webgl renderer full page
+	var renderer	= new THREE.WebGLRenderer();
+	renderer.setSize( window.innerWidth, window.innerHeight );
+	document.body.appendChild( renderer.domElement );
+
+    var pauseAnim = false;
+    var fire = false;
+    var cannonRotation = Math.PI / 6;;
+    var cannonAngle = cannonRotation;
+    var default_ball_speed = 4.0;
+    var elapsed = 0;
+
+	// setup a scene and camera
+	var scene	= new THREE.Scene();
+	var camera	= new THREE.PerspectiveCamera(80, window.innerWidth / window.innerHeight, 0.01, 1000);
+    camera.position.set(0, 3, 20);
+
+
+	// declare the rendering loop
+	var onRenderFcts= [];
+
+	// handle window resize events
+	var winResize	= new THREEx.WindowResize(renderer, camera)
+
+	//////////////////////////////////////////////////////////////////////////////////
+	//		default 3 points lightning					//
+	//////////////////////////////////////////////////////////////////////////////////
+
+	var ambientLight= new THREE.AmbientLight( 0x202020)
+	scene.add( ambientLight)
+	var frontLight	= new THREE.DirectionalLight('white', 2)
+	frontLight.position.set(5, 5, 2)
+	scene.add( frontLight )
+	var backLight	= new THREE.DirectionalLight('white', 0.75)
+	backLight.position.set(-3.5, -3.5, -2)
+	scene.add( backLight )
+
+    //Spotlight
+    var spotLight = new THREE.SpotLight(0xffffff);
+    spotLight.position.set(10, 10, 0);
+    spotLight.castShadow = true;
+    spotLight.shadowMapWidth = 2;
+    spotLight.shadowMapHeight = 2;
+    scene.add(spotLight);
+    scene.add ( new THREE.SpotLightHelper (spotLight, 0.2));
+
+    // TEXTURE setup
+    var path = "textures/MAK/"
+    /* The image names can be ANYTHING, but the the order of the SIX images
+     in the array will be used as follows:
+     the 1st image => Positive X axis
+     the 2nd image => Negative X axis
+     the 3rh image => Positive Y axis
+     the 4th image => Negative Y axis
+     the 5th image => Positive Z axis
+     the 6th image => Negative Z axis
+     */
+
+    var images = [path + "posx.jpg", path + "negx.jpg",
+        path + "posy.jpg", path + "negy.jpg",
+        path + "posz.jpg", path + "negz.jpg"];
+
+    var cubemap = THREE.ImageUtils.loadTextureCube( images );
+
+	//////////////////////////////////////////////////////////////////////////////////
+	//		add an object and make it move					//
+	//////////////////////////////////////////////////////////////////////////////////
+
+    var cannonBall_cf = new THREE.Matrix4();
+
+    //** Load texture **//
+    var stone_tex = THREE.ImageUtils.loadTexture("textures/stone.jpg");
+    stone_tex.repeat.set(8,1);
+    stone_tex.wrapS = THREE.RepeatWrapping;
+    stone_tex.wrapT = THREE.RepeatWrapping;
+
+    var metal_tex = THREE.ImageUtils.loadTexture("textures/metal.jpg");
+    metal_tex.repeat.set(1,1);
+    metal_tex.wrapS = THREE.RepeatWrapping;
+    metal_tex.wrapT = THREE.RepeatWrapping;
+
+    var caution_tex = THREE.ImageUtils.loadTexture("textures/caution.jpg");
+    caution_tex.repeat.set(1,1);
+    caution_tex.wrapS = THREE.RepeatWrapping;
+    caution_tex.wrapT = THREE.RepeatWrapping;
+
+    //X-red Y-green Z-blue
+    scene.add(new THREE.AxisHelper(5));
+
+    //Cannon base
+    var baseGeo = new THREE.SphereGeometry(1.5, 32, 32);
+    var baseMat = new THREE.MeshBasicMaterial({envMap: cubemap});
+    var base = new THREE.Mesh (baseGeo, baseMat);
+    base.translateY(1.5);
+
+    //Barrel
+    var barrelGeo = new THREE.CylinderGeometry(0.7, 1.0, 3.0, 32.0, 1.0, true);
+    var barrelMat = new THREE.MeshPhongMaterial( {color: 0x292E37, side: THREE.DoubleSide, map:caution_tex} );
+    var barrel = new THREE.Mesh (barrelGeo, barrelMat);
+    barrel.translateY(1.5);
+
+    var cannonBallGeo = new THREE.SphereGeometry(0.5, 32, 32);
+    var cannonBallMat = new THREE.MeshPhongMaterial({color: 0x292E37, map:metal_tex });
+    var cannonBall = new THREE.Mesh(cannonBallGeo, cannonBallMat);
+    //cannonBall.translateY(1.0);
+
+
+    cannonBall.castShadow = true;
+    cannonBall.add(new THREE.AxisHelper);
+    barrel.castShadow = true;
+    barrel.add(new THREE.AxisHelper);
+    base.castShadow = true;
+
+    base.rotateZ(Math.PI/6);
+    base.add(barrel);
+    scene.add(cannonBall);
+    scene.add(base);
+
+    //Ground
+    var planeGeo = new THREE.PlaneGeometry(200.0, 20.0, 10);
+    var planeMat = new THREE.MeshPhongMaterial({color:0x8B8D7A, ambient:0x1d6438, map:stone_tex});
+    var plane = new THREE.Mesh (planeGeo, planeMat);
+    plane.rotateX(THREE.Math.degToRad(-90));
+    scene.add(plane);
+
+    var ball_speed = default_ball_speed;
+
+
+	onRenderFcts.push(function(delta, now) {
+        if (pauseAnim) return;
+
+        if (fire == true) {
+            cannonBall.localToWorld(cannonBall.position);
+            var worldX = cannonBall.position.x;
+            var worldY = cannonBall.position.y;
+            var worldZ = cannonBall.position.z;
+            cannonBall.worldToLocal(cannonBall.position);
+
+            if (elapsed <= 360) {
+                barrel.translateY(Math.sin(THREE.Math.degToRad(elapsed)) * -0.01);
+                barrel.rotateY(Math.sin(THREE.Math.degToRad(elapsed)) * -0.025);
+            }
+
+            if (worldY >= 0) { //When center of ball reaches ground plane
+                console.log(cannonBall.position);
+                cannonBall.translateY(Math.cos(cannonAngle) * delta * ball_speed);
+                if (ball_speed > 0) {
+                    cannonBall.translateX(Math.sin(cannonAngle) * delta * ball_speed*-1);
+                } else {
+                    cannonBall.translateX(Math.sin(cannonAngle) * delta * ball_speed);
+                }
+                ball_speed -= delta * 0.98; // 1/100th scale
+            } else {
+                fire ^= true;
+                ball_speed = default_ball_speed;
+                cannonBall.position = new THREE.Vector3(0, 0, 0);
+                barrel.position = new THREE.Vector3(0,0,0);
+                cannonBall.translateY(1.5);
+                barrel.translateY(1.5);
+            }
+            elapsed += delta * 100;
+        } else {
+            elapsed = 0;
+            ball_speed = 4.0;
+            cannonBall.position = new THREE.Vector3(0, 0, 0);
+            barrel.position = new THREE.Vector3(0,0,0);
+            cannonBall.translateY(1.5);
+            barrel.translateY(1.5);
+        }
+    })
+
+	//////////////////////////////////////////////////////////////////////////////////
+	//		Camera Controls							//
+	//////////////////////////////////////////////////////////////////////////////////
+    var mouse	= {x : 0, y : 0};
+    var orbit = true;
+    document.addEventListener('mousemove', function(event){
+        mouse.x	= ((event.clientX - renderer.domElement.offsetLeft) / renderer.domElement.width ) * 2 - 1;
+        mouse.y	= 1 - ((event.clientY - renderer.domElement.offsetTop) / renderer.domElement.height);
+    }, false);
+
+    document.addEventListener('keypress', function(event){
+        var key = String.fromCharCode(event.keyCode || event.charCode);
+        console.log(key);
+        if (key == 'p') {
+            pauseAnim ^= true; /* toggle it */
+            console.log("Animation is now: " + pauseAnim);
+        }
+        if (key == 'w') {
+            base.rotateZ(cannonRotation * -1);
+            cannonAngle -= cannonRotation;
+        }
+        if (key == 's') {
+            base.rotateZ(cannonRotation);
+            cannonAngle += cannonRotation;
+        }
+        if (key == '[') {
+            default_ball_speed--;
+            console.log("Ball Speed Set to: " + default_ball_speed);
+         }
+         if (key == ']') {
+             default_ball_speed++;
+             console.log("Ball Speed Set to: " + default_ball_speed);
+         }
+     /*   if (key == 'a') {
+            base.translateX(-2);
+        }
+        if (key == 'd') {
+            base.translateX(2);
+        }*/
+        if(key == 'f') {
+            fire ^= true;
+            console.log("Fire is now: " + fire);
+        }
+        //Toggle spot light
+        if(key == '-'){
+            if(spotLight.intensity == 1) {
+                spotLight.intensity = 0;
+            }else{
+                spotLight.intensity = 1;
+            }
+        }
+        if(key == '1') {
+           orbit ^= true;
+        }
+        //Front view
+        if(key == 'i') {
+            camera.position.set(-30, 3, 0);
+        }
+        if(key == 'k') {
+            camera.position.set(0, 6, -30);
+        }
+ /*       if(key == 'k') {
+            camera.position.y -= 2;
+        }
+        if(key == 'l') {
+            camera.position.x += 2;
+        }
+        if(key == 'j') {
+            camera.position.x -= 2;
+        }
+*/
+    }, false);
+    onRenderFcts.push(function(delta, now){
+        if(orbit == true) {
+            camera.position.x += (mouse.x*30 - camera.position.x) * (delta*3);
+            camera.position.y += (mouse.y*30 - camera.position.y) * (delta*3);
+        }
+        camera.lookAt( scene.position )
+    });
+
+
+	//////////////////////////////////////////////////////////////////////////////////
+	//		render the scene						//
+	//////////////////////////////////////////////////////////////////////////////////
+	onRenderFcts.push(function(){
+		renderer.render( scene, camera );
+	})
+
+	//////////////////////////////////////////////////////////////////////////////////
+	//		Rendering Loop runner						//
+	//////////////////////////////////////////////////////////////////////////////////
+	var lastTimeMsec= null
+	requestAnimationFrame(function animate(nowMsec){
+		// keep looping
+		requestAnimationFrame( animate );
+		// measure time
+		lastTimeMsec	= lastTimeMsec || nowMsec-1000/60
+		var deltaMsec	= Math.min(200, nowMsec - lastTimeMsec)
+		lastTimeMsec	= nowMsec
+		// call each update function
+		onRenderFcts.forEach(function(onRenderFct){
+			onRenderFct(deltaMsec/1000, nowMsec/1000)
+		})
+	})
+})
+</script></body>
