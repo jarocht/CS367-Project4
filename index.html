@@ -17,8 +17,9 @@ require([], function(){
 
     var pauseAnim = false;
     var fire = false;
-    var cannonRotation = Math.PI / 6;;
-    var cannonAngle = cannonRotation;
+    var boom = false;
+    var cannonRotation;
+    var cannonAngle;
     var default_ball_speed = 4.0;
     var elapsed = 0;
 
@@ -114,8 +115,6 @@ require([], function(){
     var cannonBallGeo = new THREE.SphereGeometry(0.5, 32, 32);
     var cannonBallMat = new THREE.MeshPhongMaterial({color: 0x292E37, map:metal_tex });
     var cannonBall = new THREE.Mesh(cannonBallGeo, cannonBallMat);
-    //cannonBall.translateY(1.0);
-
 
     cannonBall.castShadow = true;
     cannonBall.add(new THREE.AxisHelper);
@@ -123,10 +122,14 @@ require([], function(){
     barrel.add(new THREE.AxisHelper);
     base.castShadow = true;
 
-    base.rotateZ(Math.PI/6);
     base.add(barrel);
-    scene.add(cannonBall);
+    base.add(cannonBall);
+    //scene.add(cannonBall);
     scene.add(base);
+
+    //Set rotation of barrel in upright position
+    cannonRotation = Math.PI*0;
+    cannonAngle = cannonRotation;
 
     //Ground
     var planeGeo = new THREE.PlaneGeometry(200.0, 20.0, 10);
@@ -135,48 +138,59 @@ require([], function(){
     plane.rotateX(THREE.Math.degToRad(-90));
     scene.add(plane);
 
+    var cbPos = new THREE.Vector3(cannonBall.position);
     var ball_speed = default_ball_speed;
 
+    //  Cannon that will be shot out. Use original cannonBall to set as starting pos.
+    //  Can't figure out how to do it correctly.
+    var dupCB = cannonBall.clone();
+    scene.add(dupCB);
+    dupCB.translateY(1.5);
 
+    /*     The way we were doing animation before won't work for multiple projectiles  */
+    
 	onRenderFcts.push(function(delta, now) {
         if (pauseAnim) return;
 
+
+
         if (fire == true) {
-            cannonBall.localToWorld(cannonBall.position);
+            boom = true;
+
+           /* dupCB.localToWorld(dupCB.position);
+            var worldX = dupCB.position.x;
+            var worldY = dupCB.position.y;
+            var worldZ = dupCB.position.z;
+            dupCB.worldToLocal(dupCB.position);*/
+
+         /*   cannonBall.localToWorld(cannonBall.position);
             var worldX = cannonBall.position.x;
             var worldY = cannonBall.position.y;
             var worldZ = cannonBall.position.z;
-            cannonBall.worldToLocal(cannonBall.position);
+            cannonBall.worldToLocal(cannonBall.position);*/
 
+            //Recoil animation
             if (elapsed <= 360) {
                 barrel.translateY(Math.sin(THREE.Math.degToRad(elapsed)) * -0.01);
                 barrel.rotateY(Math.sin(THREE.Math.degToRad(elapsed)) * -0.025);
             }
 
-            if (worldY >= 0) { //When center of ball reaches ground plane
-                console.log(cannonBall.position);
-                cannonBall.translateY(Math.cos(cannonAngle) * delta * ball_speed);
-                if (ball_speed > 0) {
-                    cannonBall.translateX(Math.sin(cannonAngle) * delta * ball_speed*-1);
-                } else {
-                    cannonBall.translateX(Math.sin(cannonAngle) * delta * ball_speed);
-                }
-                ball_speed -= delta * 0.98; // 1/100th scale
-            } else {
-                fire ^= true;
-                ball_speed = default_ball_speed;
-                cannonBall.position = new THREE.Vector3(0, 0, 0);
-                barrel.position = new THREE.Vector3(0,0,0);
-                cannonBall.translateY(1.5);
-                barrel.translateY(1.5);
-            }
             elapsed += delta * 100;
+
         } else {
+
+            //Translate cannon in Y direction until too high (change to when collide later)
+            if(boom == true) {
+                //while(dupCB.position.y != 50.0) {
+                    dupCB.translateY(0.1);
+                //}
+            }
+
             elapsed = 0;
             ball_speed = 4.0;
-            cannonBall.position = new THREE.Vector3(0, 0, 0);
+          //  cannonBall.position = cbPos;
             barrel.position = new THREE.Vector3(0,0,0);
-            cannonBall.translateY(1.5);
+            //cannonBall.translateY(1.5);
             barrel.translateY(1.5);
         }
     })
@@ -198,14 +212,19 @@ require([], function(){
             pauseAnim ^= true; /* toggle it */
             console.log("Animation is now: " + pauseAnim);
         }
-        if (key == 'w') {
-            base.rotateZ(cannonRotation * -1);
-            cannonAngle -= cannonRotation;
+        if (key == 'd') {
+            base.translateX(1);
         }
-        if (key == 's') {
-            base.rotateZ(cannonRotation);
-            cannonAngle += cannonRotation;
+        if (key == 'a') {
+            base.translateX(-2);
         }
+        if(key == 'w') {
+            base.translateZ(-1);
+        }
+        if(key == 's') {
+            base.translateZ(1);
+        }
+
         if (key == '[') {
             default_ball_speed--;
             console.log("Ball Speed Set to: " + default_ball_speed);
