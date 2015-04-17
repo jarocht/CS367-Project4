@@ -150,7 +150,7 @@ require([], function(){
     var targetMat = new THREE.MeshPhongMaterial({color: 0x292E37, map:metal_tex });
     var target = new THREE.Mesh(targetGeo, targetMat);
     target.translateY(+20.0);
-    target.translateX(Math.random()*(5.120-0.0200)+0.0200);
+    target.translateX(Math.random()*(5.00+5.00)-5.00);
 
     var rightGeo = new THREE.SphereGeometry(0.3, 32, 32);
     var rightMat = new THREE.MeshPhongMaterial({color: 0x292E37, map:metal_tex });
@@ -186,7 +186,7 @@ require([], function(){
         else
         {
             lives--;
-            var randPos = Math.random()*(5.00-(-5.00))+0.0200;
+            var randPos = Math.random()*(5.00-(-5.00))-5.00;
             target.position = new THREE.Vector3(randPos,20,0);
 
         }
@@ -222,6 +222,11 @@ require([], function(){
             barrel.position = new THREE.Vector3(0,0,0);
             cannonBall.translateY(1.5);
             barrel.translateY(1.5);
+        }
+
+        if(cannonBall.position == target.position) {
+            hit = true;
+            cannonBall.intersectObject()
         }
 
     })
