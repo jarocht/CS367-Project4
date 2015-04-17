@@ -3,6 +3,8 @@
 <script src="vendor/require.js/require.js"></script>
 <script src="vendor/three.js/examples/js/Detector.js"></script>
 <script src="vendor/threex.windowresize.js"></script>
+
+
 <body style='margin: 0px; background-color: #bbbbbb; overflow: hidden;'><script>
 
 require([], function(){
@@ -16,13 +18,15 @@ require([], function(){
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	document.body.appendChild( renderer.domElement );
 
+
     var pauseAnim = false;
-    //var fire = false;
-    var boom = false;
+    var fire = false;
     var cannonRotation;
     var cannonAngle;
     var default_ball_speed = 4.0;
     var elapsed = 0;
+    var lives = 3;
+    var kills = 0;
 
 	// setup a scene and camera
 	var scene	= new THREE.Scene();
@@ -75,6 +79,8 @@ require([], function(){
         path + "posz.jpg", path + "negz.jpg"];
 
     var cubemap = THREE.ImageUtils.loadTextureCube( images );
+
+
 
 	//////////////////////////////////////////////////////////////////////////////////
 	//		add an object and make it move					//
@@ -139,59 +145,85 @@ require([], function(){
     plane.rotateX(THREE.Math.degToRad(-90));
     scene.add(plane);
 
-    var cbPos = new THREE.Vector3(cannonBall.position);
+    //Targets
+    var targetGeo = new THREE.SphereGeometry(0.5, 32, 32);
+    var targetMat = new THREE.MeshPhongMaterial({color: 0x292E37, map:metal_tex });
+    var target = new THREE.Mesh(targetGeo, targetMat);
+    target.translateY(+20.0);
+    target.translateX(Math.random()*(5.120-0.0200)+0.0200);
+
+    var rightGeo = new THREE.SphereGeometry(0.3, 32, 32);
+    var rightMat = new THREE.MeshPhongMaterial({color: 0x292E37, map:metal_tex });
+    var right = new THREE.Mesh(rightGeo, rightMat);
+    target.add(right);
+    right.translateY(0.5);
+    right.translateX(0.5);
+    var leftGeo = new THREE.SphereGeometry(0.3, 32, 32);
+    var leftMat = new THREE.MeshPhongMaterial({color: 0x292E37, map:metal_tex });
+    var left = new THREE.Mesh(leftGeo, leftMat);
+    target.add(left);
+    left.translateY(0.5);
+    left.translateX(-0.5);
+
+    scene.add(target);
+
+   // var cbPos = new THREE.Vector3(cannonBall.position);
     var ball_speed = default_ball_speed;
+    var tarPos = new THREE.Vector3(target.position);
 
 
 
-    /*     The way we were doing animation before won't work for multiple projectiles  */
-
+    //Animate until you run out of lives or you kill 10
 	onRenderFcts.push(function(delta, now) {
         if (pauseAnim) return;
 
+        //Drop the target until hit or it hits the ground
+        var hit = false;
 
-        if(boom == true) {
-            fire(delta, now);
+        if(target.position.y >= 0 && hit == false) {
+            target.translateY(-0.07);
         }
-       // if (fire == true) {
-           // boom = true;
+        else
+        {
+            lives--;
+            var randPos = Math.random()*(5.00-(-5.00))+0.0200;
+            target.position = new THREE.Vector3(randPos,20,0);
 
-           /* dupCB.localToWorld(dupCB.position);
-            var worldX = dupCB.position.x;
-            var worldY = dupCB.position.y;
-            var worldZ = dupCB.position.z;
-            dupCB.worldToLocal(dupCB.position);*/
+        }
+        if (fire == true) {
 
-         /*   cannonBall.localToWorld(cannonBall.position);
+            cannonBall.localToWorld(cannonBall.position);
             var worldX = cannonBall.position.x;
             var worldY = cannonBall.position.y;
             var worldZ = cannonBall.position.z;
-            cannonBall.worldToLocal(cannonBall.position);*/
+            cannonBall.worldToLocal(cannonBall.position);
+
 
             //Recoil animation
-           // if (elapsed <= 360) {
-           //     barrel.translateY(Math.sin(THREE.Math.degToRad(elapsed)) * -0.01);
-           //     barrel.rotateY(Math.sin(THREE.Math.degToRad(elapsed)) * -0.025);
-           // }
+            if (elapsed <= 360) {
+                barrel.translateY(Math.sin(THREE.Math.degToRad(elapsed)) * -0.01);
+                barrel.rotateY(Math.sin(THREE.Math.degToRad(elapsed)) * -0.025);
+                cannonBall.translateY(0.1);
+            }else
+            {
+                elapsed = 0;
+                cannonBall.position = new THREE.Vector3(0,0,0);
+                barrel.position = new THREE.Vector3(0,0,0);
+                cannonBall.translateY(1.5);
+                barrel.translateY(1.5);
+            }
+            elapsed += delta * 100;
 
-          //  elapsed += delta * 100;
 
-       // } else {
+        } else {
 
-            //Translate cannon in Y direction until too high (change to when collide later)
-         //   if(boom == true) {
-                //while(dupCB.position.y != 50.0) {
-            //        dupCB.translateY(0.1);
-                //}
-           // }
+            elapsed = 0;
+            cannonBall.position = new THREE.Vector3(0,0,0);
+            barrel.position = new THREE.Vector3(0,0,0);
+            cannonBall.translateY(1.5);
+            barrel.translateY(1.5);
+        }
 
-         //   elapsed = 0;
-         //   ball_speed = 4.0;
-          //  cannonBall.position = cbPos;
-           // barrel.position = new THREE.Vector3(0,0,0);
-            //cannonBall.translateY(1.5);
-           // barrel.translateY(1.5);
-       // }
     })
 
 	//////////////////////////////////////////////////////////////////////////////////
@@ -239,9 +271,8 @@ require([], function(){
             base.translateX(2);
         }*/
         if(key == 'f') {
-            boom ^= true;
+            fire ^= true;
             console.log("FIRE");
-            //fire(delta,now);
         }
         //Toggle spot light
         if(key == '-'){
@@ -304,40 +335,5 @@ require([], function(){
 			onRenderFct(deltaMsec/1000, nowMsec/1000)
 		})
 	})
-
-    function fire(delta, now) {
-        //  Cannon that will be shot out. Use original cannonBall to set as starting pos.
-        //  Can't figure out how to do it correctly.
-        var dupCB = cannonBall.clone();
-        scene.add(dupCB);
-        dupCB.translateY(1.5);
-        var originalPos = dupCB.position;
-        var impact = false;
-
-        /*  Fire until cannon either hits an enemy or hits the limit  */
-        while(dupCB.position.y < 20.0 && impact == false) {
-
-            dupCB.translateY(+1.0);
-
-            if(collision) {
-                impact = true;
-            }
-
-        }
-
-        //Recoil animation
-         if (elapsed <= 360) {
-            barrel.translateY(Math.sin(THREE.Math.degToRad(elapsed)) * -0.01);
-             barrel.rotateY(Math.sin(THREE.Math.degToRad(elapsed)) * -0.025);
-         }
-
-          elapsed += delta * 100;
-
-        //  cannonBall.position = cbPos;
-        barrel.position = new THREE.Vector3(0,0,0);
-        //cannonBall.translateY(1.5);
-        barrel.translateY(1.5);
-        elapsed = 0;
-    }
 })
 </script></body>
