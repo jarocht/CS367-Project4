@@ -3,7 +3,10 @@
 <script src="vendor/require.js/require.js"></script>
 <script src="vendor/three.js/examples/js/Detector.js"></script>
 <script src="vendor/threex.windowresize.js"></script>
+
+
 <body style='margin: 0px; background-color: #bbbbbb; overflow: hidden;'><script>
+
 require([], function(){
 	// detect WebGL
 	if( !Detector.webgl ){
@@ -15,12 +18,15 @@ require([], function(){
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	document.body.appendChild( renderer.domElement );
 
+
     var pauseAnim = false;
     var fire = false;
-    var cannonRotation = Math.PI / 6;;
-    var cannonAngle = cannonRotation;
+    var cannonRotation;
+    var cannonAngle;
     var default_ball_speed = 4.0;
     var elapsed = 0;
+    var lives = 3;
+    var kills = 0;
 
 	// setup a scene and camera
 	var scene	= new THREE.Scene();
@@ -74,6 +80,8 @@ require([], function(){
 
     var cubemap = THREE.ImageUtils.loadTextureCube( images );
 
+
+
 	//////////////////////////////////////////////////////////////////////////////////
 	//		add an object and make it move					//
 	//////////////////////////////////////////////////////////////////////////////////
@@ -114,8 +122,6 @@ require([], function(){
     var cannonBallGeo = new THREE.SphereGeometry(0.5, 32, 32);
     var cannonBallMat = new THREE.MeshPhongMaterial({color: 0x292E37, map:metal_tex });
     var cannonBall = new THREE.Mesh(cannonBallGeo, cannonBallMat);
-    //cannonBall.translateY(1.0);
-
 
     cannonBall.castShadow = true;
     cannonBall.add(new THREE.AxisHelper);
@@ -123,10 +129,14 @@ require([], function(){
     barrel.add(new THREE.AxisHelper);
     base.castShadow = true;
 
-    base.rotateZ(Math.PI/6);
     base.add(barrel);
-    scene.add(cannonBall);
+    base.add(cannonBall);
+    //scene.add(cannonBall);
     scene.add(base);
+
+    //Set rotation of barrel in upright position
+    cannonRotation = Math.PI*0;
+    cannonAngle = cannonRotation;
 
     //Ground
     var planeGeo = new THREE.PlaneGeometry(200.0, 20.0, 10);
@@ -135,50 +145,90 @@ require([], function(){
     plane.rotateX(THREE.Math.degToRad(-90));
     scene.add(plane);
 
+    //Targets
+    var targetGeo = new THREE.SphereGeometry(0.5, 32, 32);
+    var targetMat = new THREE.MeshPhongMaterial({color: 0x292E37, map:metal_tex });
+    var target = new THREE.Mesh(targetGeo, targetMat);
+    target.translateY(+20.0);
+    target.translateX(Math.random()*(5.00+5.00)-5.00);
+
+    var rightGeo = new THREE.SphereGeometry(0.3, 32, 32);
+    var rightMat = new THREE.MeshPhongMaterial({color: 0x292E37, map:metal_tex });
+    var right = new THREE.Mesh(rightGeo, rightMat);
+    target.add(right);
+    right.translateY(0.5);
+    right.translateX(0.5);
+    var leftGeo = new THREE.SphereGeometry(0.3, 32, 32);
+    var leftMat = new THREE.MeshPhongMaterial({color: 0x292E37, map:metal_tex });
+    var left = new THREE.Mesh(leftGeo, leftMat);
+    target.add(left);
+    left.translateY(0.5);
+    left.translateX(-0.5);
+
+    scene.add(target);
+
+   // var cbPos = new THREE.Vector3(cannonBall.position);
     var ball_speed = default_ball_speed;
+    var tarPos = new THREE.Vector3(target.position);
 
 
+
+    //Animate until you run out of lives or you kill 10
 	onRenderFcts.push(function(delta, now) {
         if (pauseAnim) return;
 
+        //Drop the target until hit or it hits the ground
+        var hit = false;
+
+        if(target.position.y >= 0 && hit == false) {
+            target.translateY(-0.07);
+        }
+        else
+        {
+            lives--;
+            var randPos = Math.random()*(5.00-(-5.00))-5.00;
+            target.position = new THREE.Vector3(randPos,20,0);
+
+        }
         if (fire == true) {
+
             cannonBall.localToWorld(cannonBall.position);
             var worldX = cannonBall.position.x;
             var worldY = cannonBall.position.y;
             var worldZ = cannonBall.position.z;
             cannonBall.worldToLocal(cannonBall.position);
 
+
+            //Recoil animation
             if (elapsed <= 360) {
                 barrel.translateY(Math.sin(THREE.Math.degToRad(elapsed)) * -0.01);
                 barrel.rotateY(Math.sin(THREE.Math.degToRad(elapsed)) * -0.025);
-            }
-
-            if (worldY >= 0) { //When center of ball reaches ground plane
-                console.log(cannonBall.position);
-                cannonBall.translateY(Math.cos(cannonAngle) * delta * ball_speed);
-                if (ball_speed > 0) {
-                    cannonBall.translateX(Math.sin(cannonAngle) * delta * ball_speed*-1);
-                } else {
-                    cannonBall.translateX(Math.sin(cannonAngle) * delta * ball_speed);
-                }
-                ball_speed -= delta * 0.98; // 1/100th scale
-            } else {
-                fire ^= true;
-                ball_speed = default_ball_speed;
-                cannonBall.position = new THREE.Vector3(0, 0, 0);
+                cannonBall.translateY(0.1);
+            }else
+            {
+                elapsed = 0;
+                cannonBall.position = new THREE.Vector3(0,0,0);
                 barrel.position = new THREE.Vector3(0,0,0);
                 cannonBall.translateY(1.5);
                 barrel.translateY(1.5);
             }
             elapsed += delta * 100;
+
+
         } else {
+
             elapsed = 0;
-            ball_speed = 4.0;
-            cannonBall.position = new THREE.Vector3(0, 0, 0);
+            cannonBall.position = new THREE.Vector3(0,0,0);
             barrel.position = new THREE.Vector3(0,0,0);
             cannonBall.translateY(1.5);
             barrel.translateY(1.5);
         }
+
+        if(cannonBall.position == target.position) {
+            hit = true;
+            cannonBall.intersectObject()
+        }
+
     })
 
 	//////////////////////////////////////////////////////////////////////////////////
@@ -198,14 +248,19 @@ require([], function(){
             pauseAnim ^= true; /* toggle it */
             console.log("Animation is now: " + pauseAnim);
         }
-        if (key == 'w') {
-            base.rotateZ(cannonRotation * -1);
-            cannonAngle -= cannonRotation;
+        if (key == 'd') {
+            base.translateX(1);
         }
-        if (key == 's') {
-            base.rotateZ(cannonRotation);
-            cannonAngle += cannonRotation;
+        if (key == 'a') {
+            base.translateX(-2);
         }
+        if(key == 'w') {
+            base.translateZ(-1);
+        }
+        if(key == 's') {
+            base.translateZ(1);
+        }
+
         if (key == '[') {
             default_ball_speed--;
             console.log("Ball Speed Set to: " + default_ball_speed);
@@ -222,7 +277,7 @@ require([], function(){
         }*/
         if(key == 'f') {
             fire ^= true;
-            console.log("Fire is now: " + fire);
+            console.log("FIRE");
         }
         //Toggle spot light
         if(key == '-'){
