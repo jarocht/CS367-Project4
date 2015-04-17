@@ -4,6 +4,7 @@
 <script src="vendor/three.js/examples/js/Detector.js"></script>
 <script src="vendor/threex.windowresize.js"></script>
 <body style='margin: 0px; background-color: #bbbbbb; overflow: hidden;'><script>
+
 require([], function(){
 	// detect WebGL
 	if( !Detector.webgl ){
@@ -16,7 +17,7 @@ require([], function(){
 	document.body.appendChild( renderer.domElement );
 
     var pauseAnim = false;
-    var fire = false;
+    //var fire = false;
     var boom = false;
     var cannonRotation;
     var cannonAngle;
@@ -141,21 +142,19 @@ require([], function(){
     var cbPos = new THREE.Vector3(cannonBall.position);
     var ball_speed = default_ball_speed;
 
-    //  Cannon that will be shot out. Use original cannonBall to set as starting pos.
-    //  Can't figure out how to do it correctly.
-    var dupCB = cannonBall.clone();
-    scene.add(dupCB);
-    dupCB.translateY(1.5);
+
 
     /*     The way we were doing animation before won't work for multiple projectiles  */
-    
+
 	onRenderFcts.push(function(delta, now) {
         if (pauseAnim) return;
 
 
-
-        if (fire == true) {
-            boom = true;
+        if(boom == true) {
+            fire(delta, now);
+        }
+       // if (fire == true) {
+           // boom = true;
 
            /* dupCB.localToWorld(dupCB.position);
             var worldX = dupCB.position.x;
@@ -170,29 +169,29 @@ require([], function(){
             cannonBall.worldToLocal(cannonBall.position);*/
 
             //Recoil animation
-            if (elapsed <= 360) {
-                barrel.translateY(Math.sin(THREE.Math.degToRad(elapsed)) * -0.01);
-                barrel.rotateY(Math.sin(THREE.Math.degToRad(elapsed)) * -0.025);
-            }
+           // if (elapsed <= 360) {
+           //     barrel.translateY(Math.sin(THREE.Math.degToRad(elapsed)) * -0.01);
+           //     barrel.rotateY(Math.sin(THREE.Math.degToRad(elapsed)) * -0.025);
+           // }
 
-            elapsed += delta * 100;
+          //  elapsed += delta * 100;
 
-        } else {
+       // } else {
 
             //Translate cannon in Y direction until too high (change to when collide later)
-            if(boom == true) {
+         //   if(boom == true) {
                 //while(dupCB.position.y != 50.0) {
-                    dupCB.translateY(0.1);
+            //        dupCB.translateY(0.1);
                 //}
-            }
+           // }
 
-            elapsed = 0;
-            ball_speed = 4.0;
+         //   elapsed = 0;
+         //   ball_speed = 4.0;
           //  cannonBall.position = cbPos;
-            barrel.position = new THREE.Vector3(0,0,0);
+           // barrel.position = new THREE.Vector3(0,0,0);
             //cannonBall.translateY(1.5);
-            barrel.translateY(1.5);
-        }
+           // barrel.translateY(1.5);
+       // }
     })
 
 	//////////////////////////////////////////////////////////////////////////////////
@@ -240,8 +239,9 @@ require([], function(){
             base.translateX(2);
         }*/
         if(key == 'f') {
-            fire ^= true;
-            console.log("Fire is now: " + fire);
+            boom ^= true;
+            console.log("FIRE");
+            //fire(delta,now);
         }
         //Toggle spot light
         if(key == '-'){
@@ -304,5 +304,40 @@ require([], function(){
 			onRenderFct(deltaMsec/1000, nowMsec/1000)
 		})
 	})
+
+    function fire(delta, now) {
+        //  Cannon that will be shot out. Use original cannonBall to set as starting pos.
+        //  Can't figure out how to do it correctly.
+        var dupCB = cannonBall.clone();
+        scene.add(dupCB);
+        dupCB.translateY(1.5);
+        var originalPos = dupCB.position;
+        var impact = false;
+
+        /*  Fire until cannon either hits an enemy or hits the limit  */
+        while(dupCB.position.y < 20.0 && impact == false) {
+
+            dupCB.translateY(+1.0);
+
+            if(collision) {
+                impact = true;
+            }
+
+        }
+
+        //Recoil animation
+         if (elapsed <= 360) {
+            barrel.translateY(Math.sin(THREE.Math.degToRad(elapsed)) * -0.01);
+             barrel.rotateY(Math.sin(THREE.Math.degToRad(elapsed)) * -0.025);
+         }
+
+          elapsed += delta * 100;
+
+        //  cannonBall.position = cbPos;
+        barrel.position = new THREE.Vector3(0,0,0);
+        //cannonBall.translateY(1.5);
+        barrel.translateY(1.5);
+        elapsed = 0;
+    }
 })
 </script></body>
