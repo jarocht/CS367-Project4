@@ -66,7 +66,7 @@
         spotLight.shadowMapWidth = 2;
         spotLight.shadowMapHeight = 2;
         scene.add(spotLight);
-        scene.add(new THREE.SpotLightHelper(spotLight, 0.2));
+        //scene.add(new THREE.SpotLightHelper(spotLight, 0.2));
 
         // TEXTURE setup
         var path = "textures/MAK/"
@@ -225,41 +225,6 @@
                     {
                         document.getElementById("Misses").innerHTML = "Misses: " + misses;
                     }
-                    /*
-                    if (hit == false) {
-                        var tempTarPos = target.position;
-                        if (fire == true) {
-
-
-
-
-                        } else {
-                            elapsed = 0;
-                            cannonBall.position = new THREE.Vector3(0, 0, 0);
-                            barrel.position = new THREE.Vector3(0, 0, 0);
-                            cannonBall.translateY(1.5);
-                            barrel.translateY(1.5);
-                        }
-                        if (cannonBall.position.x + 1.5 >= tempTarPos.x && cannonBall.position.y > tempTarPos.y
-                                || cannonBall.position.x - 1.5 <= tempTarPos.x && cannonBall.position.y > tempTarPos.y) {
-                            hit = true;
-                            kills++;
-                        }
-                        else if (cannonBall.position.y >= tempTarPos.y) {
-                            miss = true;
-                            misses = misses + 1/30;
-                        }
-                        miss = false;
-                    }else{
-                        var randPos = Math.random() * ( 5.00 - (-5.00 ) ) - 5.00;
-                        target.position = new THREE.Vector3(randPos, 20, 0);
-                        hit = false;
-                    }
-                    */
-
-
-
-
                 }
         )
 
@@ -281,37 +246,24 @@
                 /* toggle it */
                 console.log("Animation is now: " + pauseAnim);
             }
-            if (key == 'd') {
-                base.translateX(1);
-            }
-            if (key == 'a') {
-                base.translateX(-1);
-            }
-            if (key == 'w') {
-                base.translateZ(-1);
-            }
-            if (key == 's') {
-                base.translateZ(1);
+            if (!fire){
+                if (key == 'd') {
+                    base.translateX(1);
+                }
+                if (key == 'a') {
+                    base.translateX(-1);
+                }
+                if (key == 'w') {
+                    base.translateZ(-1);
+                }
+                if (key == 's') {
+                    base.translateZ(1);
+                }
+                if (key == 'f') {
+                    fire = true;
+                }
             }
 
-            if (key == '[') {
-                default_ball_speed--;
-                console.log("Ball Speed Set to: " + default_ball_speed);
-            }
-            if (key == ']') {
-                default_ball_speed++;
-                console.log("Ball Speed Set to: " + default_ball_speed);
-            }
-            /*   if (key == 'a') {
-             base.translateX(-2);
-             }
-             if (key == 'd') {
-             base.translateX(2);
-             }*/
-            if (key == 'f') {
-                if (!fire)
-                    fire = true;
-            }
             //Toggle spot light
             if (key == '-') {
                 if (spotLight.intensity == 1) {

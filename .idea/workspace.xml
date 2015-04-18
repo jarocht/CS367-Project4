@@ -3,7 +3,6 @@
   <component name="ChangeListManager">
     <list default="true" id="11bd6802-c298-476e-a49e-5e808b9aae3a" name="Default" comment="">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/index.html" afterPath="$PROJECT_DIR$/index.html" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="CS367-Project3.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -30,8 +29,8 @@
       <file leaf-file-name="index.html" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/index.html">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.7468208" vertical-offset="2856" max-vertical-offset="6528">
-              <caret line="206" column="36" selection-start-line="206" selection-start-column="36" selection-end-line="206" selection-end-column="36" />
+            <state vertical-scroll-proportion="0.53063583" vertical-offset="4029" max-vertical-offset="5712">
+              <caret line="264" column="13" selection-start-line="264" selection-start-column="13" selection-end-line="264" selection-end-column="13" />
               <folding>
                 <element signature="n#style#0;n#body#0;n#!!top" expanded="true" />
               </folding>
@@ -319,8 +318,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/index.html">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.7468208" vertical-offset="2856" max-vertical-offset="6528">
-          <caret line="206" column="36" selection-start-line="206" selection-start-column="36" selection-end-line="206" selection-end-column="36" />
+        <state vertical-scroll-proportion="0.53063583" vertical-offset="4029" max-vertical-offset="5712">
+          <caret line="264" column="13" selection-start-line="264" selection-start-column="13" selection-end-line="264" selection-end-column="13" />
           <folding>
             <element signature="n#style#0;n#body#0;n#!!top" expanded="true" />
           </folding>
