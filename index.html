@@ -110,7 +110,7 @@
         caution_tex.wrapT = THREE.RepeatWrapping;
 
         //X-red Y-green Z-blue
-        scene.add(new THREE.AxisHelper(5));
+        //scene.add(new THREE.AxisHelper(5));
 
         //Cannon base
         var baseGeo = new THREE.SphereGeometry(1.5, 32, 32);
@@ -129,9 +129,9 @@
         var cannonBall = new THREE.Mesh(cannonBallGeo, cannonBallMat);
 
         cannonBall.castShadow = true;
-        cannonBall.add(new THREE.AxisHelper);
+        //cannonBall.add(new THREE.AxisHelper);
         barrel.castShadow = true;
-        barrel.add(new THREE.AxisHelper);
+        //barrel.add(new THREE.AxisHelper);
         base.castShadow = true;
 
         base.add(barrel);
