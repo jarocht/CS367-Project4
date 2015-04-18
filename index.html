@@ -150,31 +150,14 @@
         plane.rotateX(THREE.Math.degToRad(-90));
         scene.add(plane);
 
-        //Targets
-        /*    var targetGeo = new THREE.SphereGeometry(0.5, 32, 32);
-         var targetMat = new THREE.MeshPhongMaterial({color: 0x292E37, map:metal_tex });
-         var target = new THREE.Mesh(targetGeo, targetMat);
-         target.translateY(+20.0);
-         target.translateX(Math.random()*(5.00+5.00)-5.00);
-
-         var rightGeo = new THREE.SphereGeometry(0.3, 32, 32);
-         var rightMat = new THREE.MeshPhongMaterial({color: 0x292E37, map:metal_tex });
-         var right = new THREE.Mesh(rightGeo, rightMat);
-         target.add(right);
-         right.translateY(0.5);
-         right.translateX(0.5);
-         var leftGeo = new THREE.SphereGeometry(0.3, 32, 32);
-         var leftMat = new THREE.MeshPhongMaterial({color: 0x292E37, map:metal_tex });
-         var left = new THREE.Mesh(leftGeo, leftMat);
-         target.add(left);
-         left.translateY(0.5);
-         left.translateX(-0.5);*/
-
         var targetGeo = new THREE.CylinderGeometry(1, 1, 0.1, 32, 32);
         var targetMat = new THREE.MeshPhongMaterial(0xffff);
         var target = new THREE.Mesh(targetGeo, targetMat);
-        target.translateY(+20.0);
-        target.translateX(Math.random() * (5.00 + 5.00) - 5.00);
+        target.translateY(15.0);
+        var translation = (Math.random() * 4 + 1) * (Math.random() < 0.5 ? -1 : 1);
+        translation = Math.floor(translation);
+        target.translateX(translation);
+        //target.add(new THREE.AxisHelper(5));
         scene.add(target);
 
         // var cbPos = new THREE.Vector3(cannonBall.position);
@@ -186,44 +169,71 @@
         onRenderFcts.push(function (delta, now) {
                     if (pauseAnim) return;
 
-                    //Drop the target until hit or it hits the ground
                     var hit = false;
                     var miss = false;
+                    if (fire == true) {
+                        cannonBall.localToWorld(cannonBall.position);
+                        var ballWorldX = cannonBall.position.x;
+                        var ballWorldY = cannonBall.position.y;
+                        cannonBall.worldToLocal(cannonBall.position);
+                        target.localToWorld(target.position);
+                        var targetWorldX = target.position.x / 2;
+                        var targetWorldY = target.position.y / 2;
+                        target.worldToLocal(target.position);
+
+                        var speed = 5.0;
+                        var steps = 360 / speed;
+                        var stepDistance = targetWorldY / steps;
+                        //Recoil animation
+                        //console.log(ballWorldY + "," + targetWorldY);
+                        if (elapsed <= 360) {
+                            barrel.translateY(Math.sin(THREE.Math.degToRad(elapsed)) * -0.01);
+                            barrel.rotateY(Math.sin(THREE.Math.degToRad(elapsed)) * -0.025);
+                            cannonBall.translateY(stepDistance);
+                        } else {
+                            cannonBall.position = new THREE.Vector3(0, 0, 0);
+                            fire = false;
+                            elapsed = 0;
+                            //console.log(ballWorldX + "," + targetWorldX);
+                            if (ballWorldX == targetWorldX || ballWorldX == targetWorldX + 1 || ballWorldX == targetWorldX - 1){
+                                console.log(kills);
+                                hit = true;
+                                kills++;
+                                //Move target again
+                                target.translateX(translation * -1);
+                                translation = (Math.random() * 4 + 1) * (Math.random() < 0.5 ? -1 : 1);
+                                translation = Math.floor(translation);
+                                target.translateX(translation);
+                            } else {
+                                misses++;
+                            }
+                        }
+                        elapsed += speed;
+                    }
+                    if(kills == 5) {
+                        document.getElementById("Hits").innerHTML = "CONGRATS! YOU WIN!";
+                        pauseAnim = true;
+
+                    }else{
+                        document.getElementById("Hits").innerHTML = "Hits: " + kills;
+                    }
+                    if(misses > 10) {
+                        document.getElementById("Misses").innerHTML = "AWW, SO SAD. YOU LOSE!";
+                        pauseAnim = true;
+
+                    }else
+                    {
+                        document.getElementById("Misses").innerHTML = "Misses: " + misses;
+                    }
                     /*
-                     if(target.position.y >= 0 && hit == false) {
-                     target.translateY(-0.07);
-                     }
-                     else
-                     {
-                     lives--;*/
                     if (hit == false) {
                         var tempTarPos = target.position;
                         if (fire == true) {
 
-                            cannonBall.localToWorld(cannonBall.position);
-                            var worldX = cannonBall.position.x;
-                            var worldY = cannonBall.position.y;
-                            var worldZ = cannonBall.position.z;
-                            cannonBall.worldToLocal(cannonBall.position);
 
-
-                            //Recoil animation
-                            if (elapsed <= 360) {
-                                barrel.translateY(Math.sin(THREE.Math.degToRad(elapsed)) * -0.01);
-                                barrel.rotateY(Math.sin(THREE.Math.degToRad(elapsed)) * -0.025);
-                                cannonBall.translateY(0.1);
-                            } else {
-                                elapsed = 0;
-                                cannonBall.position = new THREE.Vector3(0, 0, 0);
-                                barrel.position = new THREE.Vector3(0, 0, 0);
-                                cannonBall.translateY(1.5);
-                                barrel.translateY(1.5);
-                            }
-                            elapsed += delta * 100;
 
 
                         } else {
-
                             elapsed = 0;
                             cannonBall.position = new THREE.Vector3(0, 0, 0);
                             barrel.position = new THREE.Vector3(0, 0, 0);
@@ -245,21 +255,7 @@
                         target.position = new THREE.Vector3(randPos, 20, 0);
                         hit = false;
                     }
-                    if(kills == 5) {
-                        document.getElementById("Hits").innerHTML = "CONGRATS! YOU WIN!";
-                        pauseAnim = true;
-
-                    }else{
-                        document.getElementById("Hits").innerHTML = "Hits: " + kills;
-                    }
-                    if(misses > 10) {
-                        document.getElementById("Misses").innerHTML = "AWW, SO SAD. YOU LOSE!";
-                        pauseAnim = true;
-
-                    }else
-                    {
-                        document.getElementById("Misses").innerHTML = "Misses: " + misses;
-                    }
+                    */
 
 
 
@@ -313,8 +309,8 @@
              base.translateX(2);
              }*/
             if (key == 'f') {
-                fire ^= true;
-                console.log("FIRE");
+                if (!fire)
+                    fire = true;
             }
             //Toggle spot light
             if (key == '-') {
